@@ -455,7 +455,7 @@ mongodb@5.6.0:
 
 mongodb@^5.7.0:
   version "5.7.0"
-  resolved "https://registry.npmjs.org/mongodb/-/mongodb-5.7.0.tgz"
+  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-5.7.0.tgz#e16d2fcdfd9f8503ec2d88288392dc3235bb3ecc"
   integrity sha512-zm82Bq33QbqtxDf58fLWBwTjARK3NSvKYjyz997KSy6hpat0prjeX/kxjbPVyZY60XYPDNETaHkHJI2UCzSLuw==
   dependencies:
     bson "^5.4.0"

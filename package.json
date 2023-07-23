@@ -15,7 +15,6 @@
     "mongodb": "^5.7.0",
     "mongoose": "^7.3.4",
     "nanoid": "^4.0.2",
-    "shortid": "^2.2.16",
     "valid-url": "^1.0.9"
   },
   "license": "MIT",

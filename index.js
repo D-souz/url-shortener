@@ -4,7 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const mongodb = require('mongodb');
 // const { nanoid } = require('nanoid');
-const shortID = require('shortid');
+// const shortID = require('shortid');
 const validUrl = require('valid-url');
 //importing the model
 const  Url = require('./urlModel');
@@ -74,8 +74,11 @@ app.post('/api/shorturl', async (req, res) => {
 
   // getting the url through the form
   let input_url = req.body.url;
+  
   // generating the unique number
-  let url_code = shortID.generate();
+  let url_code = Math.floor(Math.random() * 100000);
+  // console.log(url_code);
+
   // Checking if the url is valid
   if (!validUrl.isWebUri(input_url)) {
       res.status(401).json({

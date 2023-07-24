@@ -2,12 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const mongodb = require('mongodb');
-// const { nanoid } = require('nanoid');
-// const shortID = require('shortid');
-const validUrl = require('valid-url');
-//importing the model
-const  Url = require('./urlModel');
+const dns = require('dns');
+const urlparser = require('url');
+const  Url = require('./urlModel');   //  importing the model
+// import { url } from 'inspector';
 
 const app = express();
 
@@ -15,6 +13,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true}));
 
 app.use('/public', express.static(`${process.cwd()}/public`));
 
@@ -35,52 +35,24 @@ mongoose.connect(conn, { useNewUrlParser: true, useUnifiedTopology: true })
 })
 
 
-
-// getting the url link submitted through the form
-const bodyParser = require('body-parser');
-// parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }));
-
-// app.post('/api/shorturl', (req, res) => {
-//   // console.log(req.body.url)
-//   const inputUrl = req.body.url;
- 
-//   let shortUrl = 1;
-//   Url.findOne({})
-//   .sort({shortenUrl: -1 })
-//   .exec((err, results) => {
-//     if (!err && results != undefined) {
-//       shortUrl += results + 1
-//     }
-  
-//     if (!err) {
-//       Url.findOneAndUpdate(
-//         {originalUrl: inputUrl},
-//         {originalUrl: inputUrl, shortenUrl: shortUrl},
-//         {new: true, upsert: true},
-//         (err, savedUrl) => {
-//           const  shorturl = savedUrl.shortenUrl;
-//           res.json({original_url: inputUrl, short_url: shorturl});
-//         }
-//       )
-//     }
-//   })
-
-
-  
-// })
 app.post('/api/shorturl', async (req, res) => {
-//  console.log(req.body.url);
-
+  //  console.log(req.body.url);
   // getting the url through the form
   let input_url = req.body.url;
-  
+
   // generating the unique number
-  let url_code = Math.floor(Math.random() * 100000);
+  // let url_code = Math.floor(Math.random() * 100000);
   // console.log(url_code);
 
-  // Checking if the url is valid
-  if (!validUrl.isWebUri(input_url)) {
+  // // Checking if the url is valid
+  // if (!validUrl.isWebUri(input_url)) {
+  //     res.status(401).json({
+  //       error: 'invalid url'
+  //     })
+  //   } 
+  const dnsLookUp = dns.lookup(urlparser.parse(input_url).hostname, async (error, address) => {
+      if (!address) {
+      console.log(error);
       res.status(401).json({
         error: 'invalid url'
       })
@@ -90,17 +62,19 @@ app.post('/api/shorturl', async (req, res) => {
         let find_url = await Url.findOne({
           originalUrl: input_url
         })
+        console.log(find_url)
         // if found
         if (find_url) {
           res.json({
-            originalUrl: input_url.originalUrl,
-            shortenUrl: input_url.shortenUrl
+            originalUrl: find_url.originalUrl,
+            shortenUrl: find_url.shortenUrl
           })
         } else {
           // if it doesnot exit then create it.
+          const urlCount = await Url.countDocuments({})
           input_url = new Url({
             originalUrl: input_url,
-            shortenUrl: url_code
+            shortenUrl: urlCount
           })
           // Saving the url in the database
           await input_url.save()
@@ -109,14 +83,16 @@ app.post('/api/shorturl', async (req, res) => {
             shortenUrl: input_url.shortenUrl
           })
         }       
-
+  
       } catch (error) {
         console.log(error);
-        res.status(500).send("Server error!");
+        res.status(500).json({
+          error: "no such url!"
+        });
       }
     }
-  }
-)
+  })
+  })
 
 // endpoint to load the url using the numner generated
 app.get('/api/shorturl/:shortenUrl', async (req, res) => {
@@ -128,14 +104,56 @@ app.get('/api/shorturl/:shortenUrl', async (req, res) => {
     if (urlParams) {
       return res.redirect(urlParams.originalUrl);
     } else {
-      return res.status(404).send("page not found!");
+      return res.status(404).json({
+        error: "No short URL found for the given input"
+      });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).send("Server error!");
+    res.status(500).json({
+      error: "Wrong format"
+    });
   }
 })
 
+// app.post('/api/shorturl', async (req, res) => {
+
+//   const input_url = req.body.url;
+//   // Checking if the url is valid
+//   const dnsLookUp = dns.lookup(urlparser.parse(input_url).hostname,options, async (error, address) => {
+//     if (!address) {
+//       console.log(error);
+//       res.status(401).json({
+//         error: 'invalid url'
+//       })
+//     } else {
+//       // if the url is valid
+//       const urlCount = await Url.countDocuments({})
+//       const urlDoc = new Url({
+//         originalUrl: req.body.url,
+//         shortenUrl: urlCount
+//       })
+//     // Saving the url in the database
+//       const result = await urlDoc.save()
+//       console.log(result)
+//       res.json({
+//         original_url: urlDoc.originalUrl,
+//         shorten_url: urlDoc.shortenUrl
+//       })
+
+//     }
+//    }
+//   )
+// })
+
+// // endpoint to load the url using the numner generated
+// app.get('/api/shorturl/:short_url', async (req, res) => {
+//     // getting the shorten code from the url and matching with db
+//     const shortUrl = req.params.short_url;
+//     const urlDoc = await Url.findOne({ short_url: +shortUrl })
+//     res.redirect(urlDoc.originalUrl)
+
+//   })
 
 // Your first API endpoint
 app.get('/api/shorturl', function(req, res) {

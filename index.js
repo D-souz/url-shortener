@@ -2,10 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const dns = require('dns');
-const urlparser = require('url');
-const  Url = require('./urlModel');   //  importing the model
-// import { url } from 'inspector';
+const dns = require('node:dns');
+const validUrl = require('valid-url');
+// const urlparser = require('url');
+const  Url = require('./models/urlModel');   //  importing the model
+
 
 const app = express();
 
@@ -34,9 +35,55 @@ mongoose.connect(conn, { useNewUrlParser: true, useUnifiedTopology: true })
   console.log(err);
 })
 
+// // the post request
+// app.post('/api/shorturl', async (req, res) => {
+//   console.log(req.body.url);
+//   const enter_url = req.body.url;
+//   // Checking if the url is valid
+//   try {
+//     const urlObj = new URL(enter_url);
+//     console.log(urlObj);
+//     dns.lookup(urlObj.hostname, async (error, address, family) => {
+//       console.log(address)
+//       console.log(urlObj.protocol)
+//       // if the domain name doesnot exist
+//       if ( (!address) || (!validUrl.isWebUri(enter_url)) ) {
+//         res.status(401).json({error: 'invalid url'});
+//       } 
+//       // if (urlObj.protocol != "http:" || urlObj.protocol != "https:") {
+//       //   res.status(401).json({error: 'invalid url'});
+//       // }
+//       else {
+//         // if we have a valid url  
+//         // checking if the url entered already exists in the database
+
+    
+//           let find_url = await Url.findOne({ original_url: urlObj.href })
+//             console.log(find_url);
+//           // if found
+//         if (find_url) {
+//           res.json({ original_url: find_url.original_url, shorten_url: find_url.shorten_url })
+//         } else {
+//           // if it doesnot exit then create it.
+//             const urlCount = await Url.countDocuments({})
+//             const enter_url = new Url({ original_url: urlObj.href, shorten_url: urlCount })
+           
+//             // Saving the url in the database
+//             await enter_url.save()
+//             res.json({ original_url: enter_url.original_url, shorten_url: enter_url.shorten_url })
+//         }
+        
+//       }
+//     })
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ error: "no such url!" });
+//   }
+// })
 
 app.post('/api/shorturl', async (req, res) => {
-  //  console.log(req.body.url);
+  // try {}
+   console.log(req.body.url);
   // getting the url through the form
   let input_url = req.body.url;
 
@@ -45,13 +92,15 @@ app.post('/api/shorturl', async (req, res) => {
   // console.log(url_code);
 
   // // Checking if the url is valid
-  // if (!validUrl.isWebUri(input_url)) {
+  // if (!validUrl.isWebUri(enter_url)) {
   //     res.status(401).json({
   //       error: 'invalid url'
   //     })
   //   } 
-  const dnsLookUp = dns.lookup(urlparser.parse(input_url).hostname, async (error, address) => {
-      if (!address) {
+  const urlObj = new URL(input_url);
+      console.log(urlObj);
+  const dnsLookUp = dns.lookup(urlObj.hostname, async (error, address, family) => {
+      if ( (!address) || (!validUrl.isWebUri(input_url)) ) {
       console.log(error);
       res.status(401).json({
         error: 'invalid url'
@@ -59,33 +108,32 @@ app.post('/api/shorturl', async (req, res) => {
     } else {
       // checking if the url entered already exists in the database
       try {
-        let find_url = await Url.findOne({
-          originalUrl: input_url
-        })
+        let find_url = await Url.findOne({ original_url: input_url })
         console.log(find_url)
         // if found
         if (find_url) {
           res.json({
-            originalUrl: find_url.originalUrl,
-            shortenUrl: find_url.shortenUrl
+            original_url: find_url.original_url,
+            shorten_url: find_url.shorten_url
           })
         } else {
           // if it doesnot exit then create it.
           const urlCount = await Url.countDocuments({})
-          input_url = new Url({
-            originalUrl: input_url,
-            shortenUrl: urlCount
+          enter_url = new Url({
+            original_url: input_url,
+            shorten_url: urlCount
           })
           // Saving the url in the database
-          await input_url.save()
+          const result = enter_url.save()
+          console.log(result)
           res.json({
-            originalUrl: input_url.originalUrl,
-            shortenUrl: input_url.shortenUrl
+            original_url: enter_url.original_url,
+            shorten_url: enter_url.shorten_url
           })
         }       
   
       } catch (error) {
-        console.log(error);
+        console.log(error).message;
         res.status(500).json({
           error: "no such url!"
         });
@@ -95,14 +143,14 @@ app.post('/api/shorturl', async (req, res) => {
   })
 
 // endpoint to load the url using the numner generated
-app.get('/api/shorturl/:shortenUrl', async (req, res) => {
+app.get('/api/shorturl/:shortUrl', async (req, res) => {
   try {
     // getting the shorten code from the url and matching with db
     const urlParams = await Url.findOne({
-      shortenUrl: req.params.shortenUrl
+      shorten_url: req.params.shortUrl
     })
     if (urlParams) {
-      return res.redirect(urlParams.originalUrl);
+      return res.redirect(urlParams.original_url);
     } else {
       return res.status(404).json({
         error: "No short URL found for the given input"
@@ -118,9 +166,9 @@ app.get('/api/shorturl/:shortenUrl', async (req, res) => {
 
 // app.post('/api/shorturl', async (req, res) => {
 
-//   const input_url = req.body.url;
+//   const enter_url = req.body.url;
 //   // Checking if the url is valid
-//   const dnsLookUp = dns.lookup(urlparser.parse(input_url).hostname,options, async (error, address) => {
+//   const dnsLookUp = dns.lookup(urlparser.parse(enter_url).hostname,options, async (error, address) => {
 //     if (!address) {
 //       console.log(error);
 //       res.status(401).json({
@@ -130,15 +178,15 @@ app.get('/api/shorturl/:shortenUrl', async (req, res) => {
 //       // if the url is valid
 //       const urlCount = await Url.countDocuments({})
 //       const urlDoc = new Url({
-//         originalUrl: req.body.url,
-//         shortenUrl: urlCount
+//         original_url: req.body.url,
+//         short_url: urlCount
 //       })
 //     // Saving the url in the database
 //       const result = await urlDoc.save()
 //       console.log(result)
 //       res.json({
-//         original_url: urlDoc.originalUrl,
-//         shorten_url: urlDoc.shortenUrl
+//         original_url: urlDoc.original_url,
+//         shorten_url: urlDoc.short_url
 //       })
 
 //     }
@@ -151,7 +199,7 @@ app.get('/api/shorturl/:shortenUrl', async (req, res) => {
 //     // getting the shorten code from the url and matching with db
 //     const shortUrl = req.params.short_url;
 //     const urlDoc = await Url.findOne({ short_url: +shortUrl })
-//     res.redirect(urlDoc.originalUrl)
+//     res.redirect(urlDoc.original_url)
 
 //   })
 

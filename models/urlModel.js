@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 // creating a url schema/model
 const urlSchema = new mongoose.Schema({
-    originalUrl: {
+    original_url: {
         type:"string",
         required: true
     },
-    shortenUrl: {type: Number}
+    shorten_url: {type: Number}
 });
 
 const Url = mongoose.model('Url', urlSchema);

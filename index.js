@@ -7,7 +7,6 @@ const validUrl = require('valid-url');
 // const urlparser = require('url');
 const  Url = require('./models/urlModel');   //  importing the model
 
-const {MongoClient} = require('mongodb');
 
 const app = express();
 
@@ -24,29 +23,17 @@ app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// // database connection
-// const conn = "mongodb+srv://blog123:blog123@cluster0.x6chg7g.mongodb.net/urlShorter?retryWrites=true&w=majority";
-// mongoose.connect(conn, { useNewUrlParser: true, useUnifiedTopology: true })
-// .then(() => {
-//   app.listen(port, function() {
-//   console.log(`Listening on port ${port} and db connected`);
-// });
-// })
-// .catch((err) => {
-//   console.log(err);
-// })
-// connecting to the database using mongodb client
+// database connection
 const conn = "mongodb+srv://blog123:blog123@cluster0.x6chg7g.mongodb.net/urlShorter?retryWrites=true&w=majority";
-const client = new MongoClient(conn);
-client.connect()
+mongoose.connect(conn, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(() => {
-    app.listen(port, function() {
-    console.log(`Listening on port ${port} and db connected`);
-  });
-  })
-  .catch((err) => {
-    console.log(err);
-  })
+  app.listen(port, function() {
+  console.log(`Listening on port ${port} and db connected`);
+});
+})
+.catch((err) => {
+  console.log(err);
+})
 
 // // the post request
 // app.post('/api/shorturl', async (req, res) => {
